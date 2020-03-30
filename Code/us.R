@@ -14,3 +14,6 @@ US<-datak[which(datak$Country.Region=="US"),]
 unique(US$Province.State)
 
        
+#nytimes data
+datausc<-read.csv("../Data/Covid/usa/covid-19-data/us-counties.csv")
+#country level- sufficient data for time series
