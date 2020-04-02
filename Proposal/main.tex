@@ -72,18 +72,16 @@ Recent studies currently in preprint have explored whether SARS-CoV-2 also varie
 %Some attempts have been made to use maximum entropy techniques to explore whether certain parts of the world are likely to be more susceptible to COVID-19 epidemics (\cite{Araujo2020SpreadClimate,Bariotakis2020ClimaticSARS-CoV-2}) but these approaches have been highly criticised (\cite{Chipperfield2017OnNaimi}).
 Many studies have used phenomenological models (mostly linear models, including LOESS regressions and GLMs) to find links between climate and COVID-19 incidence or mortality (\cite{Wang2020HighCOVID-19,Luo2020TheOutbreak,Sajadi2020TemperatureCOVID-19,Bannister-Tyrrell2020Preliminary2020,Rahman2020AOutbreak,Oliveiros2020RoleCases,Chen2020RolesScale,Ma2020EffectsWuhan,Poirier2020TheScales.}).  While limited by the quality of their data, most of these studies suggest that lower temperature and humidity increase SARS-CoV-2 transmission. An attempt to mechanistically model COVID-19 including temperature has been made (\cite{Shi2020TheChina}). In this work, an SEIR model was combined with a linear model representing the time dependent rate of infectious contact, including temperature and absolute humidity as variables.
 \\
-The aim of this project is to mechanistically model the spread of COVID-19 using a SEIR model incorporating climatic variables (temperature and humidity) and use this to make predictions. This project will be more mechanistic than previous work and have access data with more spatial and temporal detail.
+The aim of this project is to mechanistically model the spread of COVID-19 using a SEIR model incorporating climatic variables (temperature and humidity) and use this to make predictions. This project will be more mechanistic than previous work and have access data with more spatial and temporal detail.\\
+The main question being addressed is: To what extent is COVID-19 spread likely to depend on temperature and climate? Between region differences can be described (what locations are more at risk?). In addition, the effect of within region changes in climate would be useful to inform planning for individual countries (is COVID-19 likely get worse over winter in temperate countries?). Factors other than climate are likely to effect COVID-19 so understanding how these interact with climate is important (How does the effect of climate change at different levels of social interaction?).
 \section{Proposed Methods}
-This project will make a SEIR model for COVID-19. This will include modelling the survival of SARS-CoV-2 outside the host and how climatic variables will change this. Data regarding survival of SARS-CoV-2 and other coronaviruses can be used to model this. In addition, human movement could be modelled, improving our understanding of the interaction between climate and movement in the severity of the epidemic. COVID-19 data will be used to parameterise the model (using data about early transmission, when possible). Sensitivity analysis will be carried out to understand how robust the model is to changes in parameters. This model will be used to make predictions about how the disease will spread over time. One particular focus could be whether Winter in temperate climates is likely to worsen the epidemic.
-If time allows, we may attempt to validate the model with data.
+This project will make a SEIR model for COVID-19. This will include modelling the survival of SARS-CoV-2 in different climatic conditions using experimental data about the survival of SARS-CoV-2 and other coronaviruses such as SARS outside of the host (\cite{Chin2020StabilityConditions}). In addition, variation in human movement could be modelled, improving our understanding of the interaction between climate and movement in the severity of the epidemic. COVID-19 case data will be used to estimate the transmissibility and recovery rate . Sensitivity analysis will be carried out to understand how robust the model is to changes in parameters. This model will be used to make predictions about how the disease will spread over time.If time allows, we may attempt to validate the model with data.
 \section{Anticipated Outputs and Outcomes}
-A SEIR model for COVID-19\\
-An understanding of how climate affects the spread of COVID-19 and how this interacts with human movement \\
-Prediction about Winter from climate predictions\\
-Possibility for predictions about future of COVID-19 
+The main outcome will be a SEIR model for COVID-19 which will be used to gain an understanding of how climate affects the spread of COVID-19 and how this interacts with human movement. Another outcome will be predictions about winter and potentially the future of COVID-19.
 \section{Project Feasibility}
 \begin{flushleft}
-\begin{ganttchart}[hgrid={*1{draw=black!5, line width=.75pt}},vgrid={*1{draw=black!5, line width=.75pt}}]{1}{22}
+\begin{tikzpicture}[/pgfgantt/y unit chart=0.7cm]  
+\begin{ganttchart}[hgrid={*1{draw=black!5, line width=.75pt}},vgrid={*1{draw=black!5, line width=.75pt}},title top shift=0]{1}{22}
   \gantttitlelist{1,...,22}{1} \\
   \ganttbar{Reading, Writing Introduction}{1}{4} \\
   \ganttbar{Making models}{4}{6}\\
@@ -91,10 +89,20 @@ Possibility for predictions about future of COVID-19
   \ganttbar{Sensitivity Analysis}{10}{12}\\  
   \ganttbar{Using models to make predictions}{13}{15}\\
   \ganttbar{Analysis}{16}{18}\\
-  \ganttbar{write methods and results section}{17}{19}\\
+  \ganttbar{write methods}{4}{18}\\
+  \ganttbar{write results section}{17}{19}\\
   \ganttbar{Write discussion and refresh introduction}{19}{21}\\
   \ganttbar{Editing, formatting, finish writing}{21}{22}
+  \ganttlink{elem0}{elem1}
+\ganttlink{elem1}{elem2}
+\ganttlink{elem2}{elem3}
+  \ganttlink{elem3}{elem4}
+\ganttlink{elem4}{elem5}
+\ganttlink{elem5}{elem7}
+  \ganttlink{elem7}{elem8}
+\ganttlink{elem8}{elem9}
 \end{ganttchart}
+\end{tikzpicture}
 \end{flushleft}
 
 \section{Itemized Budget}
