@@ -1,0 +1,11 @@
+*~ 
+*.tmp
+*.log
+*-c*ance.tex
+*.gz
+*.ods
+*Sandbox*
+output*.rda
+*.mp4
+*.mp3
+
