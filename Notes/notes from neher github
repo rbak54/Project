@@ -1,0 +1,12 @@
+https://github.com/neherlab/CoV_Seasonality/blob/master/compartment_model.py
+
+infection = params[:,1]*(1 - params[:,6]*I**3/(0.03**3+I**3))*S*I*(1+params[:,3]*np.cos(2*np.pi*(t - params[:,4])))
+
+
+beta*(1-containment*I^3/(0.03^3+I^3))*SI*(1+eps- short for epsilon- how seasonal it is *cosfunction)
+
+SI*(1-H)*beta0*(1+eps*....)
+which is beta(t) S I 
+
+
+think about units
