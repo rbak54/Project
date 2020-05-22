@@ -2,6 +2,7 @@ library(socialmixr)
 data("polymod")
 data <- polymod$contacts
 contact_table <- table(data$part_id, data$duration_multi)
+#seems to be shifted 
 del <- as.numeric(names(which(contact_table[, 1] > 0)))
 data <- data[which(data$part_id != del), ]
 contact_table <- table(data$part_id, data$duration_multi)
