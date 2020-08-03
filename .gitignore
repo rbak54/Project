@@ -11,3 +11,4 @@ output*.rda
 *Reading*
 *Results*
 *.csv
+*.nc
