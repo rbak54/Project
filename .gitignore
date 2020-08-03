@@ -12,3 +12,4 @@ output*.rda
 *Results*
 *.csv
 *.nc
+allCountries.txt
