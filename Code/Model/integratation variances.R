@@ -16,18 +16,138 @@ pop<-read.csv("../../Data/population/API_SP.POP.TOTL_DS2_en_csv_v2_1217749/popul
 
 #add cr_normal, seir function and r0 function mod for z
 
+cr_climate <- function(Max_Coordinates_cr, range_C, Climate,variance_scalar) {
+  
+  #finds the equation fiven temp_at_max and range_C. then finds S for given T
+  #uses where temp at max relates to range_C to determine stype (to determine whether lower or upper value of range_C is used to find SI)
+  #parameters
+  #m is the cooredinates where the contact rate is at a maximum 
+  #c is 95 % confidence interval for duration
+  #t range_C is the T values the function is calculated for
+  #s type determines whether s is calculated using the upper or lower confidence interval
+  
+  #find s  
+  c_u = range_C[2]
+  c_l = range_C[1]
+  m_C = Max_Coordinates_cr[1]
+  m_cr = Max_Coordinates_cr[2] 
+  
+  if (abs(Max_Coordinates_cr[1]-range_C[1])>abs(Max_Coordinates_cr[1]-range_C[2])){
+    s = variance_scalar * -(c_l - m_C) / 1.96
+  }else{
+    s = variance_scalar *(c_u - m_C) / 1.96
+  }
+  #finds d at T values for given parameters (contact finds equation using duration_normal_scaled)
+  #t_range_C not strictly needed 
+  #return(mean_duration(T = T,m = c(temp_at_max, max_mean_contact), c = quantile_95, T_range_C = range_C, stype=stype))
+  return(sqrt(2 * pi) * s * m_cr * (1 / (sqrt(2 * pi) * s))*exp((-(Climate - m_C) ^ 2) / (2 * s ^ 2)))
+}
 
 
 
 
-integration_general<-function(parms,sims,time){
+
+SEIR_model <- function(time, values, parms) {
+  #function where c changes with the climate and humidity at each timepoint
+  #initial values
+  S <- values[1]
+  E <- values[2]
+  I <- values[3]
+  R <- values[4]
+  #N <- values[5]
+  #parameters
+  
+  #for (parameter in names(parms)){
+  #  assign(parameter,parms[[parameter]])
+  #}
+  
+  #for (variable in names(Climate_Variables)){
+  #  assign(variable,Climate_Variables[[variable]])
+  #}
+  mu=parms[["mu"]]
+  sigma=parms[["sigma"]]
+  p=parms[["p"]]
+  gamma=parms[["gamma"]]
+  f=parms[["f"]]
+  #N=parms[["N"]]
+  nu=parms[["nu"]]
+  h=parms[["h"]]
+  epsilon=parms[["epsilon"]]
+  d=parms[["d"]]
+  Max_cr=parms[["Max_cr"]]
+  #climate_label=parms[["mu"]]
+  g=parms[["g"]]
+  q0=parms[["q0"]]
+  time_at_peak=parms[["Climate_Variables"]][["time_at_peak"]]
+  range_C=parms[["Climate_Variables"]][["range_C"]]
+  Max_Climate_cr=parms[["Climate_Variables"]][["Max_Climate_cr"]]
+  variance_scalar=parms[["variance_scalar"]]
+  
+  
+  #find climate given time
+  Climate <- Climate_Time_Function(time=time ,min=range_C[1],max=range_C[2],time_at_peak = time_at_peak)   
+  
+  cr_value=cr_climate(Climate =  Climate,Max_Coordinates_cr = c(Max_Climate_cr,Max_cr), range_C=range_C, variance_scalar = variance_scalar)
+  q_value= q_climate(q0=q0,g=g, Climate=Climate)
+  beta_value = beta(c_r = cr_value,q =q_value ,d = d,h =h ,epsilon =epsilon )    
+  currentpop<-S+E+I+R
+  #seir model
+  infectives<-beta_value * I * S / (currentpop)
+  dS = nu * (currentpop) - infectives - mu * S + f * R
+  dE = infectives - (sigma + mu) * E
+  dI = sigma * E - (mu + gamma) * I * (1/(1-p))
+  dR = gamma * I - mu * R - f * R
+  #dS = nu * (currentpop) - beta_value * I * S / (currentpop) - mu * S + f * R
+  #dE = beta_value * S * I / (currentpop) - (sigma + mu) * E
+  #dI = sigma * E - (mu + gamma) * I * (1/(1-p))
+  #dR = gamma * I - mu * R - f * R
+  
+  #dN = nu * N - (p/(1-p)) *(mu + gamma) * I - mu * (S + E + I + R)
+  
+  
+  list(c(dS, dE, dI, dR))
+}
+
+
+
+find_R0_function<-function(Climate,parms, Climate_Variables_Temp, max_R0_Req,variance_scalar){
+  #finds r0 given temperatures where peak occurs. can use this to find maximum if max_r0_req is true
+  #take variables from list to individual variables
+  for (parameter in names(parms)){
+    assign(parameter,parms[[parameter]])
+  }
+  
+  for (variable in names(Climate_Variables_Temp)){
+    assign(variable,Climate_Variables_Temp[[variable]])
+  }
+  # max_R0_req- find all or just max?
+  #d and cr as functions of time
+  cr_value=cr_climate(Climate =  Climate,Max_Coordinates_cr = c(Max_Climate_cr,Max_cr), range_C=range_C, variance_scalar=variance_scalar)
+  q_value= q_climate(q0=q0,g=g, Climate=Climate)
+  beta_value = beta(c_r = cr_value,q =q_value ,d = d,h =h ,epsilon =epsilon ) 
+  
+  
+  #below finds the R0 at maximum if required
+  #Climate[which.max((sigma / (sigma + mu)) * beta_value/(mu + alpha + gamma))]
+  if (max_R0_Req =="True"){
+    return(max((sigma / (sigma + mu)) * beta_value / ((mu + gamma)*( 1 / ( 1 - p)))))  
+    
+  }else{
+    return(c((sigma / (sigma + mu)) * beta_value / ((mu + gamma)*( 1 / ( 1 - p )))))  
+  }
+}
+
+
+
+
+integration_general<-function(parms,Z,time){
   extra_cols<-9
   model_means=matrix(ncol =7)
   names(model_means)<-c("country","week","mismatch","meanI","meanR0","meantemp","changes")
   parms_temp<-parms
   parms_temp[["N"]]<-NA
-  for (changes in 1:length(Z)){
-     #changethat part of parms
+    parms_temp[["variance_scalar"]]=Z
+   # changes<-Z
     #name the variable which is used in above three functions
     for (location_index in 1:nrow(data_wider_means_summ)){
       parms_temp[["N"]]=population_deyle[location_index,3]
@@ -47,17 +167,18 @@ integration_general<-function(parms,sims,time){
           mismatch<-round(mismatch,2)
           temp = ode(    y = start,    time = time,    func = SEIR_model,    parms = parms_temp)
           
-          png(paste0("../../Results/Plots/model_series/",data_wider_means_summ[location_index,"country"],gsub("\\.","",mismatch),changes,".png"))
+          png(paste0("../../Results/Plots/variance/model_series/",data_wider_means_summ[location_index,"country"],gsub("\\.","",mismatch),"variance",Z,".png"))
           plottime(temp)
           graphics.off()
-          temp_extra<-matrix(rep(c(location_index,data_wider_means_summ[location_index,"minT"],data_wider_means_summ[location_index,"maxT"],data_wider_means_summ[location_index,"peakT"],mismatch,NA,NA,NA,variance_changer)),nrow=nrow(temp),ncol=extra_cols,byrow=T)
+          temp_extra<-matrix(rep(c(location_index,data_wider_means_summ[location_index,"minT"],data_wider_means_summ[location_index,"maxT"],data_wider_means_summ[location_index,"peakT"],mismatch,NA,NA,NA,Z)),nrow=nrow(temp),ncol=extra_cols,byrow=T)
           colnames(temp_extra)<-c("country","lower","upper","peak_week","mismatch","temperature","R0","week","changes")
           temp_extra[,"temperature"]<-Climate_Time_Function(time = time[1:nrow(temp)],min=parms_temp[["Climate_Variables"]][["range_C"]][1],max=parms_temp[["Climate_Variables"]][["range_C"]][2],time_at_peak =parms_temp[["Climate_Variables"]][["time_at_peak"]] )
-          temp_extra[,"R0"]<-find_R0_function(Climate=temp_extra[c(1:nrow(temp)),"temperature"],parms=parms_temp, Climate_Variables_Temp=parms_temp[["Climate_Variables"]], max_R0_Req=F)
+          temp_extra[,"R0"]<-find_R0_function(Climate=temp_extra[c(1:nrow(temp)),"temperature"],parms=parms_temp, Climate_Variables_Temp=parms_temp[["Climate_Variables"]], max_R0_Req=F, variance_scalar = variance_scalar)
           year<-ceiling((temp[,"time"])/365)
           day<-(temp[,"time"]-(year-1)*365)
           temp_extra[,"week"]<-ceiling(day/7)
           temp_extra[,"country"]<-location_index
+          temp_extra[,"changes"]<-Z
           temp<-cbind(temp,temp_extra)
           temp<-as_tibble(temp)
           #model_means_temp<- temp %>% group_by(country,week,mismatch,combination) %>% summarise(meanI=mean(I),meanR0=mean(R0),meantemp=mean(temperature),.groups="drop")
@@ -88,11 +209,12 @@ integration_general<-function(parms,sims,time){
           temp_extra<-matrix(rep(c(location_index,data_wider_means_summ[location_index,"minRH"],data_wider_means_summ[location_index,"maxRH"],data_wider_means_summ[location_index,"peakRH"],mismatch,NA,NA,NA,changes)),nrow=nrow(RH),ncol=extra_cols,byrow=T)
           colnames(temp_extra)<-c("country","lower","upper","peak_week","mismatch","relative_humidity","R0","week","changes")
           temp_extra[,"relative_humidity"]<-Climate_Time_Function(time = time[1:nrow(RH)],min=parms_temp[["Climate_Variables"]][["range_C"]][1],max=parms_temp[["Climate_Variables"]][["range_C"]][2],time_at_peak =parms_temp[["Climate_Variables"]][["time_at_peak"]] )
-          temp_extra[,"R0"]<-find_R0_function(Climate=temp_extra[c(1:nrow(RH)),"relative_humidity"],parms=parms_temp, Climate_Variables_Temp=parms_temp[["Climate_Variables"]], max_R0_Req=F)
+          temp_extra[,"R0"]<-find_R0_function(Climate=temp_extra[c(1:nrow(RH)),"relative_humidity"],parms=parms_temp, Climate_Variables_Temp=parms_temp[["Climate_Variables"]], max_R0_Req=F, variance_scalar = variance_scalar)
           year<-ceiling((RH[,"time"])/365)
           day<-(RH[,"time"]-(year-1)*365)
           temp_extra[,"week"]<-ceiling(day/7)
           temp_extra[,"country"]<-location_index
+          temp_extra[,"changes"]<-Z
           RH<-cbind(RH,temp_extra)
           RH<-as_tibble(RH)
           model_means_temp<- RH %>% group_by(country,week,mismatch,changes) %>% summarise(meanI=mean(I),meanR0=mean(R0),meanRH=mean(relative_humidity),.groups="drop")
@@ -108,7 +230,6 @@ integration_general<-function(parms,sims,time){
           #graphics.off()
         }
       }
-    }
   }
   model_means<-model_means[-1,]
   return(model_means)
@@ -166,9 +287,58 @@ parms = list( mu = 2.06e-5,sigma = 0.68 ,p = 0.001, gamma =0.25,f=0.1,
 #sims_range<-c(5,10,20,40,80,160)
 
 
-Z=1
 sims=1
   time = seq(1,365*10, by=1)
-  
-  model_means<-integration_general(parms,sims,time)
 #plot here
+changes_range<-c(0.75,1,3,5,7,9,11)
+
+for (sss in changes_range){
+  
+  Z<-sss
+  time = seq(1,365*10, by=1)
+  
+  model_means<-integration_general(parms,Z,time)
+  write.csv(model_means,paste0("../../Results/fromfunction/variance/","variance",Z,parms[["climate_label"]],".csv"))
+  correlation_df<-correlation_function(model_means,parms)
+  write.csv(correlation_df,paste0("../../Results/fromfunction/variance/cors/","variance",Z,parms[["climate_label"]],"correlation_dataframe.csv"))
+  
+  bests<-correlation_df %>% group_by(country) %>% summarise(best=mismatch[which.max(corsI)],.groups="keep")
+  correlation_df_means<-as_tibble(correlation_df) %>% group_by(mismatch) %>% mutate(means=mean(corsI),errors=std(corsI))
+  
+  png(paste0("../../Results/Plots/variance/boxandwhisker","variance",Z,parms[["climate_label"]],".png"))
+  print(ggplot(data=correlation_df, aes(x= as.factor(mismatch),y= corsI)) +geom_boxplot())
+  graphics.off()
+  
+  png(paste0("../../Results/Plots/variance/erros","variance",Z,parms[["climate_label"]],".png"))
+  print(ggplot(data=correlation_df_means, aes(x= as.factor(mismatch),y= means)) +geom_point()+
+          geom_errorbar(aes(ymin=means+errors,ymax=means-errors)))
+  graphics.off()
+  
+  correlation_df_means<-as_tibble(correlation_df) %>% group_by(mismatch,lat) %>% summarise(means=mean(corsI),errors=std(corsI),.groups="keep")
+  png(paste0("../../Results/Plots/variance/lats","variance",Z,parms[["climate_label"]],".png"))
+  print(ggplot(data=correlation_df_means, aes(x= abs(lat), col=as.factor(mismatch),y= means)) +geom_point()+
+          geom_errorbar(aes(ymin=means+errors,ymax=means-errors)))
+  graphics.off()
+  
+  correlation_df$Mismatch<-as.factor(correlation_df$mismatch)
+  
+  bests<-correlation_df %>% group_by(country) %>% summarise(best=Mismatch[which.max(corsI)],.groups="keep")
+  correlation_df_means<-as_tibble(correlation_df) %>% group_by(Mismatch) %>% mutate(means=mean(corsI),errors=std(corsI))
+  
+  pdf(paste0("../../Results/Plots/variance/boxandwhisker","variance",Z,parms[["climate_label"]],".pdf"))
+  print(ggplot(data=correlation_df, aes(x= Mismatch,y= corsI)) +geom_boxplot()  +theme_bw()+xlab("Mismatch") +ylab("Mean Correlation"))
+  graphics.off()
+  
+  pdf(paste0("../../Results/Plots/variance/erros","variance",Z,parms[["climate_label"]],".pdf"))
+  print(ggplot(data=correlation_df_means, aes(x= Mismatch,y= means)) +geom_point()+theme_bw()+
+          geom_errorbar(aes(ymin=means+errors,ymax=means-errors))+xlab("Mismatch") +ylab("Mean Correlation"))
+  graphics.off()
+  
+  correlation_df_means<-as_tibble(correlation_df) %>% group_by(Mismatch,lat) %>% summarise(means=mean(corsI),errors=std(corsI),.groups="keep")
+  pdf(paste0("../../Results/Plots/variance/lats","variance",Z,parms[["climate_label"]],".pdf"))
+  print(ggplot(data=correlation_df_means, aes(x= abs(lat), col=Mismatch,y= means)) +scale_fill_discrete(name = "Dose")+geom_point()+theme_bw()+
+          geom_errorbar(aes(ymin=means+errors,ymax=means-errors)) +xlab("Absolute Value of Latitude") +ylab("Mean Correlation") )
+  graphics.off()
+  
+}
+
