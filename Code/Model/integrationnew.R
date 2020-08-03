@@ -18,8 +18,16 @@ pop<-read.csv("../../Data/population/API_SP.POP.TOTL_DS2_en_csv_v2_1217749/popul
 
 
 integration_general<-function(parms,sims,time){
-  Y<-make_lhs(n=sims,parms = parms)
-  write.csv(Y,"../../Data/latincube.csv")
+  if (sims>1){
+      Y<-make_lhs(n=sims,parms = parms)
+      write.csv(Y,"../../Data/latincube.csv")
+  }else{
+    Y<-as.data.frame(matrix(c(parms[["sigma"]],parms[["h"]],parms[["mu"]],parms[["f"]]),nrow=1))
+    colnames(Y)<-c("sigma","h","mu","f")
+    
+    print("estimated parameters used")
+  }
+  
   extra_cols<-9
   model_means=matrix(ncol =7)
   names(model_means)<-c("country","week","mismatch","meanI","meanR0","meantemp","combination")
@@ -129,10 +137,10 @@ correlation_function<-function(model_means,parms){
   correlation_df<- as_tibble(model_means)  %>% group_by(country,combination,mismatch) 
 #  correlation_df<-na.omit(correlation_df$)
   if (parms[["climate_label"]]=="Temperature"){
-    correlation_df <- correlation_df %>%  summarise(corsI=correlations(meanI,unique(country)),corsR=correlations(meanR0,unique(country)),maxs=max(meantemp),mins=min(meantemp),means=mean(meantemp),.groups="keep")
+    correlation_df <- correlation_df %>%  summarise(corsI=correlations(meanI,unique(country)),corsR=correlations(meanR0,unique(country)),maxs=max(meantemp),mins=min(meantemp),time_max=which.max(meantemp),means=mean(meantemp),.groups="keep")
   }
   if (parms[["climate_label"]]=="RH"){
-    correlation_df <- correlation_df %>%  summarise(corsI=correlations(meanI,unique(country)),corsR=correlations(meanR0,unique(country)),maxs=max(meanRH),mins=min(meanRH),means=mean(meanRH),.groups="keep")
+    correlation_df <- correlation_df %>%  summarise(corsI=correlations(meanI,unique(country)),corsR=correlations(meanR0,unique(country)),maxs=max(meanRH),mins=min(meanRH),time_max=which.max(meanRH),means=mean(meanRH),.groups="keep")
   }
   #correlation_df$mismatch<-as.factor(correlation_df$mismatch)
   #for (i in unique(correlation_df$combination)){
@@ -180,7 +188,11 @@ correlation_df<-correlation_function(model_means,parms)
 write.csv(correlation_df,paste0("../../Results/fromfunction/cors/",sims,parms[["climate_label"]],"correlation_dataframe.csv"))
 
 bests<-correlation_df %>% group_by(country) %>% summarise(best=mismatch[which.max(corsI)],.groups="keep")
-correlation_df_means<-as_tibble(correlation_df) %>% group_by(mismatch) %>% mutate(means=mean(corsI),errors=std(corsI))
+
+correlation_df_means<-as_tibble(correlation_df) %>% group_by(mismatch) %>% summarise(means=mean(corsI),errors=std(corsI),.groups="keep")
+correlation_df_means_country<-as_tibble(correlation_df) %>% group_by(mismatch,lat,maxs,mins,time_max,pop) %>% summarise(means=mean(corsI),errors=std(corsI),.groups="keep")
+
+
 
 png(paste0("../../Results/Plots/boxandwhisker",sims,parms[["climate_label"]],".png"))
 print(ggplot(data=correlation_df, aes(x= as.factor(mismatch),y= corsI)) +geom_boxplot())
@@ -191,43 +203,47 @@ print(ggplot(data=correlation_df_means, aes(x= as.factor(mismatch),y= means)) +g
   geom_errorbar(aes(ymin=means+errors,ymax=means-errors)))
 graphics.off()
 
-correlation_df_means<-as_tibble(correlation_df) %>% group_by(mismatch,lat) %>% summarise(means=mean(corsI),errors=std(corsI),.groups="keep")
 png(paste0("../../Results/Plots/lats",sims,parms[["climate_label"]],".png"))
-print(ggplot(data=correlation_df_means, aes(x= abs(lat), col=as.factor(mismatch),y= means)) +geom_point()+
+print(ggplot(data=correlation_df_means_country, aes(x= abs(lat), col=as.factor(mismatch),y= means)) +geom_point()+
   geom_errorbar(aes(ymin=means+errors,ymax=means-errors)))
 graphics.off()
 
-correlation_df$Mismatch<-as.factor(correlation_df$mismatch)
-
-bests<-correlation_df %>% group_by(country) %>% summarise(best=Mismatch[which.max(corsI)],.groups="keep")
-correlation_df_means<-as_tibble(correlation_df) %>% group_by(Mismatch) %>% mutate(means=mean(corsI),errors=std(corsI))
-
 pdf(paste0("../../Results/Plots/boxandwhisker",sims,parms[["climate_label"]],".pdf"))
-print(ggplot(data=correlation_df, aes(x= Mismatch,y= corsI)) +geom_boxplot()  +theme_bw()+xlab("Mismatch") +ylab("Mean Correlation"))
+print(ggplot(data=correlation_df, aes(x= mismatch,y= corsI)) +geom_boxplot()  +theme_bw()+xlab("Mismatch") +ylab("Mean Correlation"))
 graphics.off()
 
 pdf(paste0("../../Results/Plots/erros",sims,parms[["climate_label"]],".pdf"))
-print(ggplot(data=correlation_df_means, aes(x= Mismatch,y= means)) +geom_point()+theme_bw()+
+print(ggplot(data=correlation_df_means, aes(x= as.factor(mismatch),y= means)) +geom_point()+theme_bw()+
         geom_errorbar(aes(ymin=means+errors,ymax=means-errors))+xlab("Mismatch") +ylab("Mean Correlation"))
 graphics.off()
 
-correlation_df_means<-as_tibble(correlation_df) %>% group_by(Mismatch,lat) %>% summarise(means=mean(corsI),errors=std(corsI),.groups="keep")
 pdf(paste0("../../Results/Plots/lats",sims,parms[["climate_label"]],".pdf"))
-print(ggplot(data=correlation_df_means, aes(x= abs(lat), col=Mismatch,y= means)) +scale_fill_discrete(name = "Dose")+geom_point()+theme_bw()+
+print(ggplot(data=correlation_df_means, aes(x= abs(lat), col=as.factor(mismatch),y= means))+geom_point()+theme_bw()+
         geom_errorbar(aes(ymin=means+errors,ymax=means-errors)) +xlab("Absolute Value of Latitude") +ylab("Mean Correlation") )
 graphics.off()
 
 }
 
 
+print(ggplot(data=correlation_df_means_country, aes(x= abs(lat) , col=as.factor(mismatch),y=maxs-mins))+geom_point()+theme_bw()+
+        geom_errorbar(aes(ymin=means+errors,ymax=means-errors)) )
+#differencres in mismatch at higher lat could be due to this diff
 
-#lots some plots here :(
+print(ggplot(data=correlation_df_means_country, aes(y=means , col=as.factor(mismatch),x=maxs-mins))+geom_point()+theme_bw()+
+              geom_errorbar(aes(ymin=means+errors,ymax=means-errors))) 
+#but at low value still unclear
+
+
+print(ggplot(data=correlation_df_means_country, aes(x= abs(lat) , y=means, col=log(pop)))+geom_point()+theme_bw()+
+        geom_errorbar(aes(ymin=means+errors,ymax=means-errors)) 
+            
+
 #maxs-mins vs means
 #also temp, min, max time at max
 
 #also looked at interactions between these and mismatch.nothing much 
 
-)
+
 
 
 # 
