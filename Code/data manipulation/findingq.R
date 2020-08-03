@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 #Harper
 
 
@@ -7,6 +8,9 @@
 
 
   data<-read.csv("../../Data/converted harper 1961.csv",header =F)
+=======
+data<-read.csv("../../Data/converted harper 1961.csv",header =F)
+>>>>>>> ff120799c5d88fbd160863e2338a9eced8242e35
 # in this dataset nil becomes 0, trace or n.d becomes NA,and the midpoint of the range is used
 #where there is a range I have used the midpoint
 data<-as.data.frame(data)
@@ -21,12 +25,17 @@ formatted_data[,6]<-rep(1:11,each=7)
 formatted_data[,1]<-rep(as.vector(as.matrix((data[1,]))),each=7)
 formatted_data[,2]<-rep(as.vector(as.matrix((data[2,]))),each=7)
 formatted_data[,3]<-rep(as.vector(as.matrix((data[3,]))),each=7)
+<<<<<<< HEAD
 colnames(formatted_data)<-c("Temp","Hum","Rep","Time","Viability","Experiment","q1","v0","q2","aic1","aic2")
+=======
+colnames(formatted_data)<-c("Temp","Hum","Rep","Time","Viability","Experiment","b1","v0","b2","aic1","aic2")
+>>>>>>> ff120799c5d88fbd160863e2338a9eced8242e35
 
 
 
 require("minpack.lm")
 
+<<<<<<< HEAD
 times<-seq(0,1,length.out = 10000)
 par(mfrow=c(3,4))
 for (i in (unique(formatted_data$Experiment))){
@@ -41,12 +50,32 @@ for (i in (unique(formatted_data$Experiment))){
  #this is model one
  model<-nlsLM(Viability~v0*exp(q*Time),data=data_subset,start=list(v0=100,q=-5),lower = c(v0=0  ,q=-300),upper = c(v0=100  ,q=000))
  #
+=======
+times<-seq(0,1,length.out = 100)
+par(mfrow=c(3,4))
+for (i in (unique(formatted_data$Experiment))){
+ data_subset<-formatted_data[which(formatted_data[,6]==i),]
+ model<-nlsLM(Viability~100*exp(-b*Time),data=data_subset,start=list(b=10))
+ # plot(times,100*exp(-times*summary(model)$parameters[1,1]),"s",ylim=c(0,100))
+  #points(data_subset$Time,data_subset$Viability,col="blue",cex=1)
+ formatted_data[which(formatted_data[,6]==i),10]<-AIC(model) 
+ 
+ formatted_data[which(formatted_data[,6]==i),9]<-summary(model)$parameters[1,1]
+ 
+ model<-nlsLM(Viability~v0*exp(-b*Time),data=data_subset,start=list(v0=100,b=0))
+ #,lower=c(0,0),upper = c(100,1000)) 
+>>>>>>> ff120799c5d88fbd160863e2338a9eced8242e35
  #without limits results look better? not sure which makes more biological sense
            
  formatted_data[which(formatted_data[,6]==i),7]<-summary(model)$parameters[2,1]
  formatted_data[which(formatted_data[,6]==i),8]<-summary(model)$parameters[1,1] 
+<<<<<<< HEAD
  formatted_data[which(formatted_data[,6]==i),10]<-AIC(model)
  plot(times,summary(model)$parameters[1,1]*exp(times*summary(model)$parameters[2,1]),type="s",ylim=c(0,100),ylab="Viability")
+=======
+ formatted_data[which(formatted_data[,6]==i),11]<-AIC(model)
+ plot(times,summary(model)$parameters[1,1]*exp(-times*summary(model)$parameters[2,1]),"s",ylim=c(0,100))
+>>>>>>> ff120799c5d88fbd160863e2338a9eced8242e35
  points(data_subset$Time,data_subset$Viability,col="blue",cex=1)
  }
 
@@ -57,19 +86,33 @@ shrunk_data<-formatted_data[seq(1,77,by=7),c(1,2,3,6,7,8,9,10,11)]
 shrunk_data
 #first model best for all but 1 eg so just use first model?
 par(mfrow=c(2,3))
+<<<<<<< HEAD
 plot(shrunk_data$Temp,shrunk_data$q1)
 plot(shrunk_data$Temp,shrunk_data$q2)
 plot(shrunk_data$Temp,shrunk_data$v0)
 plot(shrunk_data$Hum,shrunk_data$q1)
 plot(shrunk_data$Hum,shrunk_data$q2)
+=======
+plot(shrunk_data$Temp,shrunk_data$b1)
+plot(shrunk_data$Temp,shrunk_data$b2)
+plot(shrunk_data$Temp,shrunk_data$v0)
+plot(shrunk_data$Hum,shrunk_data$b1)
+plot(shrunk_data$Hum,shrunk_data$b2)
+>>>>>>> ff120799c5d88fbd160863e2338a9eced8242e35
 plot(shrunk_data$Hum,shrunk_data$v0)
 
 
 
 par(mfrow=c(2,2))
+<<<<<<< HEAD
 plot(shrunk_data$Temp,shrunk_data$q1)
 
 plot(shrunk_data$Hum,shrunk_data$q1)
+=======
+plot(shrunk_data$Temp,shrunk_data$b1)
+
+plot(shrunk_data$Hum,shrunk_data$b1)
+>>>>>>> ff120799c5d88fbd160863e2338a9eced8242e35
 
 
 shrunk_data_repeats<-as.data.frame(matrix(NA,ncol=ncol(shrunk_data),nrow = sum(shrunk_data$Rep)))
@@ -81,23 +124,36 @@ for (i in 1:nrow(shrunk_data)) {
 }
 
 Temps<-seq(-10,40,length.out = 1000)
+<<<<<<< HEAD
 Temp_Model<-nlsLM(q1~q0*exp(Temp*g),data=shrunk_data_repeats[,c(1,5)],start = list(g=0,q0=0))
 g<-summary(Temp_Model)$coefficients[1,1]
 q0<-summary(Temp_Model)$coefficients[2,1]
   
 plot(Temps,q0*exp(g*Temps),"s")
 points(shrunk_data_repeats$Temp,shrunk_data_repeats$q1)
+=======
+g<-summary(nlsLM(b1~b0*exp(Temp*g),data=shrunk_data_repeats[,c(1,5)],start = list(g=0,b0=0)))$coefficients[1,1]
+b0<-summary(nlsLM(b1~b0*exp(Temp*g),data=shrunk_data_repeats[,c(1,5)],start = list(g=0,b0=0)))$coefficients[2,1]
+  
+plot(Temps,b0*exp(g*Temps),"s")
+points(shrunk_data_repeats$Temp,shrunk_data_repeats$b1)
+>>>>>>> ff120799c5d88fbd160863e2338a9eced8242e35
 shrunk_data_repeats
 
 #result of all this is that equation for how b responds to temp is 
   #(b0 * exp (g * Temps))
+<<<<<<< HEAD
 q0
+=======
+b0
+>>>>>>> ff120799c5d88fbd160863e2338a9eced8242e35
 #0.572
 g
 #0.164
   
 # or if apply limits
 #b0=9.079
+<<<<<<< HEAD
 #g=0.085  
 
 #dublineau
@@ -189,3 +245,6 @@ points(shrunk_data$Temp,shrunk_data$b2)
 
 
 
+=======
+#g=0.085
+>>>>>>> ff120799c5d88fbd160863e2338a9eced8242e35
