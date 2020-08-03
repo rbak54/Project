@@ -12,3 +12,8 @@ output*.rda
 *.csv
 *.nc
 allCountries.txt
+*Results/results_sandbox*
+*Results/fromfunction/80*.csv
+*Results/fromfunction/100*.csv
+*Results/fromfunction/150*.csv
+*Results/fromfunction/200*.csv
