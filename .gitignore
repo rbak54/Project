@@ -9,7 +9,6 @@ output*.rda
 *.mp4
 *.mp3
 *Reading*
-*.csv
 *.nc
 allCountries.txt
 *Results/results_sandbox*
