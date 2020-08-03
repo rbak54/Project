@@ -9,3 +9,5 @@ output*.rda
 *.mp4
 *.mp3
 *Reading*
+*Results*
+*.csv
