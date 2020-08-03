@@ -1,0 +1,54 @@
+File ../../Data/Raw_TAVG_EqualArea.nc (NC_FORMAT_NETCDF4):
+
+     5 variables (excluding dimension variables):
+        float longitude[map_points]   (Chunking: [5498])  
+            units: degrees_east
+            standard_name: longitude
+            long_name: Longitude
+        float latitude[map_points]   (Chunking: [5498])  
+            units: degrees_north
+            standard_name: latitude
+            long_name: Latitude
+        double land_mask[map_points]   (Chunking: [5498])  
+            units: none
+            standard_name: land_mask
+            long_name: Land Mask
+            missing_value: NaN
+            valid_min: 0
+            valid_max: 1
+        float temperature[map_points,time]   (Chunking: [1333,1])  (Compression: level 9)
+            units: degree C
+            standard_name: surface_temperature_anomaly
+            long_name: Air Surface Temperature Anomaly
+            coordinates: latitude longitude
+            missing_value: NaN
+            valid_min: -16.2666339874268
+            valid_max: 17.7673282623291
+        float climatology[map_points,month_number]   (Chunking: [5498,12])  (Compression: level 9)
+            units: degree C
+            standard_name: surface_temperature_climatology
+            long_name: Air Surface Temperature Climatology (Jan 1951 - Dec 1980)
+            coordinates: latitude longitude
+            missing_value: NaN
+            valid_min: -67.7532958984375
+            valid_max: 38.2563667297363
+
+     3 dimensions:
+        map_points  Size:5498
+[1] "vobjtovarid4: **** WARNING **** I was asked to get a varid for dimension named map_points BUT this dimension HAS NO DIMVAR! Code will probably fail at this point"
+        time  Size:3240   *** is unlimited ***
+            units: year A.D.
+            standard_name: time
+            long_name: Time
+        month_number  Size:12
+[1] "vobjtovarid4: **** WARNING **** I was asked to get a varid for dimension named month_number BUT this dimension HAS NO DIMVAR! Code will probably fail at this point"
+
+    8 global attributes:
+        Conventions: Berkeley Earth Internal Convention (based on CF-1.5)
+        title: Native Format Berkeley Earth Surface Temperature Anomaly Field
+        history: 23-Jan-2020 11:11:30
+        institution: Berkeley Earth Surface Temperature Project
+        source_file: NoScalpelNoWeighting_TAVG.50985s.20200123T110933.mat
+        source_history: 23-Jan-2020 07:33:02
+        source_data_version: ca6f26341938dae0ea7dd619bce6f15e
+        comment: This file contains Berkeley Earth surface temperature anomaly field in our native equal-area format.
